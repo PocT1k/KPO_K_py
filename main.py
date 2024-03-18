@@ -12,28 +12,32 @@ screenHeight = 600
 menuHeight = 100
 
 class Circle:
-    def __init__(self, screen, color=RGB_LIGHTGREY, x=50, y=(screenHeight-menuHeight)/2, radius=40):
+    def __init__(self, screen, type=0, x=50, y=(screenHeight-menuHeight)/2, radius=40):
         self.screen = screen
-        self.color = color
+        self.type = type
         self.x = x
         self.y = y
         self.radius = radius
-        self.inside = radius * 0.6
-        self.moving = False
+        self.insideR = radius * 0.6
+        if type==1:
+            self.color = RGB_BLUE
+        elif type==2:
+            self.color = RGB_ORANGE
+        else:
+            self.color = RGB_LIGHTGREY
 
     def setSpeedTange(self, speed, ange):
         self.speed = speed
         self.ange = ange
-        self.moving = True
 
     def move(self):
-        if (self.moving):
+        if (self.speed):
             self.x += self.speed * cos(self.ange)
             self.y += self.speed * sin(self.ange)
 
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.radius)
-        pygame.draw.circle(self.screen, RGB_DARKGREY, (self.x, self.y), self.radius)
+        pygame.draw.circle(self.screen, RGB_DARKGREY, (self.x, self.y), self.insideR)
 
 
 #Звпуск
@@ -64,7 +68,7 @@ while running:
 
     # Движение круга
     circle_x += speed
-    if circle_x > screenWidth:
+    if circle_x > screenWidth + circle_radius:
         circle_x = -circle_radius
 
     # Отрисовка круга
