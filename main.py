@@ -1,6 +1,6 @@
 #UTF-8 Будет здесь!
 import pygame
-from math import sin, cos, radians, sqrt, hypot
+from math import sin, cos, radians, sqrt, hypot, atan2
 
 
 RGB_BLUE = (0, 0, 225)
@@ -40,10 +40,10 @@ class Missile:
         self.energy = 0
         self.ange = 0
 
-        # self.addEnergy = 0
-        # self.addAnge = 0
+        self.addEnergy = 0
+        self.addAnge = 0
 
-        # self.countCollision = 0
+        self.countCollision = 0
         pass
 
     def setEnergyTange(self, energy = 0.0, ange = 0.0):
@@ -89,25 +89,44 @@ def calcWallCollision():
                 missile.energy *= coefCllisionLossEnergy
     pass
 
-def calcMissileCollision(): #TO DO переписать или дописать функцию просчёта коллизии
-    for missileI in missiles: #Просчёт столкновения для каждого шара
-        if missileI.energy == 0:
-            continue
-        for missileJ in missiles: #Считаем столкновения
-            if missileI == missileJ:
+# def calcMissileCollision(): #TO DO переписать или дописать функцию просчёта коллизии
+#     for missileI in missiles: #Просчёт столкновения для каждого шара
+#         if missileI.energy == 0:
+#             continue
+#         for missileJ in missiles: #Считаем столкновения
+#             if missileI == missileJ:
+#                 continue
+#             distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
+#             if distance < 2 * radiusMissile:
+#                 missileI.countCollision += 1
+#
+#     for missileI in missiles:
+#         pass
+#
+#     #TO DO collision missile
+#
+#     for missileI in missiles:
+#         missileI.countCollision = 0
+#     pass
+
+def calcMissileCollision():
+    for i, missileI in enumerate(missiles):
+        for j, missileJ in enumerate(missiles):
+            if i >= j:  # Избегаем повторной проверки и самопересечения
                 continue
-            distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
-            if distance < 2 * radiusMissile:
-                missileI.countCollision += 1
-
-    for missileI in missiles:
-        pass
-
-    #TO DO collision missile
-
-    for missileI in missiles:
-        missileI.countCollision = 0
-    pass
+            # Расчет расстояния между камнями
+            distance = hypot(missileI.x - missileJ.x, missileI.y - missileJ.y)
+            if distance < (missileI.radius + missileJ.radius):
+                # Простейшая реакция на столкновение: обмен энергиями и углами
+                missileI.energy, missileJ.energy = missileJ.energy, missileI.energy
+                missileI.ange, missileJ.ange = missileJ.ange, missileI.ange
+                # Дополнительно можно оттолкнуть камни друг от друга, чтобы избежать "залипания"
+                overlap = missileI.radius + missileJ.radius - distance
+                direction = atan2(missileI.y - missileJ.y, missileI.x - missileJ.x)
+                missileI.x += cos(direction) * overlap / 2
+                missileI.y += sin(direction) * overlap / 2
+                missileJ.x -= cos(direction) * overlap / 2
+                missileJ.y -= sin(direction) * overlap / 2
 
 def sceneDraw():
     screen.fill(RGB_WHITE)
@@ -151,23 +170,23 @@ countFps = 0
 
 #circle
 missiles = [
-Missile(screen, 1), Missile(screen, 2),
+Missile(screen, 1, 100, 200), Missile(screen, 2, 100, 400),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2)
 ]
-# missiles[0].setEnergyTange(12.5, 5)
-# missiles[1].setEnergyTange(15, 0)
-# missiles[2].setEnergyTange(20, 35)
-# missiles[3].setEnergyTange(20, -35)
-# missiles[4].setEnergyTange(25, 25)
-#
-# missiles[5].setEnergyTange(5, 90)
-# missiles[6].setEnergyTange(5, 80)
-# missiles[7].setEnergyTange(5, 70)
-# missiles[8].setEnergyTange(5, 60)
-# missiles[9].setEnergyTange(5, 50)
+missiles[0].setEnergyTange(12.5, -20)
+missiles[1].setEnergyTange(15, 25)
+missiles[2].setEnergyTange(20, 35)
+missiles[3].setEnergyTange(20, -35)
+missiles[4].setEnergyTange(25, 25)
+
+missiles[5].setEnergyTange(5, 90)
+missiles[6].setEnergyTange(5, 80)
+missiles[7].setEnergyTange(5, 70)
+missiles[8].setEnergyTange(5, 60)
+missiles[9].setEnergyTange(5, 50)
 
 #main cycle
 running = True
