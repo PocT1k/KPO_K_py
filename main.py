@@ -18,7 +18,7 @@ radiusMissile = 30
 widthWall = 50
 pointsStart = screenWidth - 300
 pointsWidth = 200
-lockFPS = 60
+lockFps = 60
 coefCllisionLossEnergy = 0.9
 
 class Missile:
@@ -80,6 +80,15 @@ def calcWallCollision():
                 missile.energy *= coefCllisionLossEnergy
     pass
 
+def calcMissileCollision():
+    for missileI in missiles:
+        if missileI.energy:
+
+            for missileJ in missiles:
+                if missileI == missileJ:
+                    continue
+                #TO DO collision missile
+
 def sceneDraw():
     screen.fill(RGB_WHITE)
 
@@ -93,6 +102,11 @@ def sceneDraw():
     missilesDraw()
     pass
 
+def calcFps():
+    countFps = clock.get_fps()
+    textFps = font20.render(f"FPS: {int(countFps)}", True, RGB_LIGHTGREEN)
+    screen.blit(textFps, (screenWidth - 120, 0))
+
 
 #Инициализация
 #Звпуск
@@ -102,6 +116,7 @@ pygame.display.set_caption("Карамболь")
 
 font20 = pygame.font.Font("w3-ip.ttf", 20)
 font155 = pygame.font.Font("w3-ip.ttf", 155)
+
 textPoint = font155.render("+1", True, RGB_WHITE)
 
 #ФПС
@@ -125,20 +140,21 @@ missiles[4].setSpeedTange(25, 25)
 #Основной игровой цикл
 running = True
 while running:
+
+    #events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
+    #draw & calc
     sceneDraw()
     missilesMove()
     calcWallCollision()
+    calcMissileCollision()
+    calcFps()
 
-    # Подсчет FPS
-    countFps = clock.get_fps()
-    fps_text = font20.render(f"FPS: {int(countFps)}", True, RGB_LIGHTGREEN)
-    screen.blit(fps_text, (screenWidth - 100, 0))
-
+    #update
     pygame.display.flip()
-    clock.tick(lockFPS)  #Частота обновления экрана
+    clock.tick(lockFps)  #Частота обновления экрана
 
 pygame.quit()
