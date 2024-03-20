@@ -1,5 +1,6 @@
 #UTF-8 Будет здесь!
 import pygame
+import math
 from math import sin, cos, radians, sqrt, hypot, atan2
 
 
@@ -20,7 +21,8 @@ widthWall = 50
 pointsStart = screenWidth - 300
 pointsWidth = 200
 lockFps = 60
-coefCllisionLossEnergy = 0.9
+coefLossCllisionEnergy = 0.97
+coefLossMoveEnergy = 0.03
 
 class Missile:
     def __init__(self, screen, type = 0, x = radiusMissile + 10, y = (screenHeight - menuHeight) / 2 + menuHeight, radius = radiusMissile):
@@ -54,7 +56,7 @@ class Missile:
         if self.energy:
             self.x += sqrt(2 * self.energy) * cos(radians(self.ange))
             self.y -= sqrt(2 * self.energy) * sin(radians(self.ange))
-            self.energy -= 0.06
+            self.energy -= coefLossMoveEnergy
             if self.energy <= 0:
                 self.energy = 0
                 self.ange = 0
@@ -83,10 +85,10 @@ def calcWallCollision():
         if missile.energy:
             if missile.ange > 0 and (missile.y < menuHeight + widthWall + radiusMissile): #top line
                 missile.ange *= -1
-                missile.energy *= coefCllisionLossEnergy
+                missile.energy *= coefLossCllisionEnergy
             if missile.ange < 0 and (missile.y > screenHeight - widthWall - radiusMissile): #bottom line
                 missile.ange *= -1
-                missile.energy *= coefCllisionLossEnergy
+                missile.energy *= coefLossCllisionEnergy
     pass
 
 # def calcMissileCollision(): #TO DO переписать или дописать функцию просчёта коллизии
@@ -112,21 +114,28 @@ def calcWallCollision():
 def calcMissileCollision():
     for i, missileI in enumerate(missiles):
         for j, missileJ in enumerate(missiles):
-            if i >= j:  # Избегаем повторной проверки и самопересечения
+            if i >= j:  #Избегаем повторной проверки и самопересечения
                 continue
-            # Расчет расстояния между камнями
+            #Расчет расстояния между камнями
             distance = hypot(missileI.x - missileJ.x, missileI.y - missileJ.y)
-            if distance < (missileI.radius + missileJ.radius):
-                # Простейшая реакция на столкновение: обмен энергиями и углами
-                missileI.energy, missileJ.energy = missileJ.energy, missileI.energy
+            if distance < 2 * radiusMissile:
+                #Простейшая реакция на столкновение: обмен энергиями и углами
+                missileI.energy, missileJ.energy = missileJ.energy * coefLossCllisionEnergy, missileI.energy * coefLossCllisionEnergy
                 missileI.ange, missileJ.ange = missileJ.ange, missileI.ange
-                # Дополнительно можно оттолкнуть камни друг от друга, чтобы избежать "залипания"
-                overlap = missileI.radius + missileJ.radius - distance
+
+                #Отталкивание для предотвращения залипания
+                overlay = (missileI.radius + missileJ.radius - distance) / 2
+                # energy = (overlay * lockFps / 2) ** 2 / 2
+                # if missileI.energy < energy: missileI.energy = energy
+                # if missileJ.energy < energy: missileJ.energy = energy
+                #
+                # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
+
                 direction = atan2(missileI.y - missileJ.y, missileI.x - missileJ.x)
-                missileI.x += cos(direction) * overlap / 2
-                missileI.y += sin(direction) * overlap / 2
-                missileJ.x -= cos(direction) * overlap / 2
-                missileJ.y -= sin(direction) * overlap / 2
+                missileI.x += cos(direction) * overlay
+                missileI.y += sin(direction) * overlay
+                missileJ.x -= cos(direction) * overlay
+                missileJ.y -= sin(direction) * overlay
 
 def sceneDraw():
     screen.fill(RGB_WHITE)
