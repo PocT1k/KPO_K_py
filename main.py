@@ -48,14 +48,17 @@ class Missile:
         self.countCollision = 0
         pass
 
-    def setEnergyTange(self, energy = 0.0, ange = 0.0):
+    def setEnergyAnge(self, energy = 0.0, ange = 0.0):
         self.energy = energy
         self.ange = ange
 
     def move(self):
         if self.energy:
-            self.x += sqrt(2 * self.energy) * cos(radians(self.ange))
-            self.y -= sqrt(2 * self.energy) * sin(radians(self.ange))
+            rd = radians(self.ange)
+            cs = cos(rd)
+            sn = sin(rd)
+            self.x += sqrt(2 * self.energy) * cs
+            self.y -= sqrt(2 * self.energy) * sn
             self.energy -= coefLossMoveEnergy
             if self.energy <= 0:
                 self.energy = 0
@@ -185,17 +188,17 @@ Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2)
 ]
-missiles[0].setEnergyTange(12.5, -20)
-missiles[1].setEnergyTange(15, 25)
-missiles[2].setEnergyTange(20, 35)
-missiles[3].setEnergyTange(20, -35)
-missiles[4].setEnergyTange(25, 25)
+missiles[0].setEnergyAnge(12.5, -20)
+missiles[1].setEnergyAnge(15, 25)
+missiles[2].setEnergyAnge(20, 35)
+missiles[3].setEnergyAnge(20, -35)
+missiles[4].setEnergyAnge(25, 25)
 
-missiles[5].setEnergyTange(5, 90)
-missiles[6].setEnergyTange(5, 80)
-missiles[7].setEnergyTange(5, 70)
-missiles[8].setEnergyTange(5, 60)
-missiles[9].setEnergyTange(5, 50)
+missiles[5].setEnergyAnge(5, 90)
+missiles[6].setEnergyAnge(5, 80)
+missiles[7].setEnergyAnge(5, 70)
+missiles[8].setEnergyAnge(5, 60)
+missiles[9].setEnergyAnge(5, 50)
 
 #main cycle
 running = True
