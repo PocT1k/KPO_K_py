@@ -1,7 +1,7 @@
-#UTF-8 Будет здесь!
+# UTF-8 Будет здесь!
 import pygame
-import math
-from math import sin, cos, radians, sqrt, hypot, atan2
+from math import sin, cos, sqrt, hypot, atan2
+from math import pi, tau
 
 
 RGB_BLUE = (0, 0, 225)
@@ -38,36 +38,38 @@ class Missile:
             self.color = RGB_ORANGE
         else:
             self.color = RGB_LIGHTGREY
-        #physics
-        self.energy = 0
-        self.ange = 0
+
+        # physics
+        self.energy = 0 # [0, 2 pi)
+        self.rAnge = 0
 
         self.addEnergy = 0
-        self.addAnge = 0
+        self.addRAnge = 0
 
         self.countCollision = 0
-        pass
+    pass
 
-    def setEnergyAnge(self, energy = 0.0, ange = 0.0):
+    def setEnergyRAnge(self, energy = 0.0, rAnge = 0.0):
+        rAnge = rAnge % tau
+        self.rAnge = rAnge
         self.energy = energy
-        self.ange = ange
 
     def move(self):
         if self.energy:
-            rd = radians(self.ange)
-            cs = cos(rd)
-            sn = sin(rd)
+            cs = cos(self.rAnge)
+            sn = sin(self.rAnge)
             self.x += sqrt(2 * self.energy) * cs
             self.y -= sqrt(2 * self.energy) * sn
             self.energy -= coefLossMoveEnergy
             if self.energy <= 0:
                 self.energy = 0
-                self.ange = 0
+                self.rAnge = 0
+    pass
 
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.radius)
         pygame.draw.circle(self.screen, RGB_DARKGREY, (self.x, self.y), self.insideR)
-    pass
+pass
 
 def missilesMove():
     for missile in missiles:
@@ -77,7 +79,7 @@ def missilesDraw():
     for missile in missiles:
         missile.draw()
 
-def isMovement(): #T - move, F - calm
+def isMovement(): # T - move, F - calm
     for missile in missiles:
         if missile.energy:
             return True
@@ -86,69 +88,76 @@ def isMovement(): #T - move, F - calm
 def calcWallCollision():
     for missile in missiles:
         if missile.energy:
-            if missile.ange > 0 and (missile.y < menuHeight + widthWall + radiusMissile): #top line
-                missile.ange *= -1
+            if missile.rAnge < pi and (missile.y < menuHeight + widthWall + radiusMissile): # top line
+                missile.rAnge = (missile.rAnge * -1) % tau
                 missile.energy *= coefLossCllisionEnergy
-            if missile.ange < 0 and (missile.y > screenHeight - widthWall - radiusMissile): #bottom line
-                missile.ange *= -1
+            if missile.rAnge > pi and (missile.y > screenHeight - widthWall - radiusMissile): # bottom line
+                missile.rAnge = (missile.rAnge * -1) % tau
                 missile.energy *= coefLossCllisionEnergy
-    pass
-
-# def calcMissileCollision(): #TO DO переписать или дописать функцию просчёта коллизии
-#     for missileI in missiles: #Просчёт столкновения для каждого шара
-#         if missileI.energy == 0:
-#             continue
-#         for missileJ in missiles: #Считаем столкновения
-#             if missileI == missileJ:
-#                 continue
-#             distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
-#             if distance < 2 * radiusMissile:
-#                 missileI.countCollision += 1
-#
-#     for missileI in missiles:
-#         pass
-#
-#     #TO DO collision missile
-#
-#     for missileI in missiles:
-#         missileI.countCollision = 0
-#     pass
+pass
 
 def calcMissileCollision():
-    for i, missileI in enumerate(missiles):
-        for j, missileJ in enumerate(missiles):
-            if i >= j:  #Избегаем повторной проверки и самопересечения
+    two_dimensional_array = [[0] * len(missiles) for _ in range(len(missiles))]
+
+    for i, missileI in enumerate(missiles): # Просчёт было ли столкновение для каждого шара
+        if missileI.energy == 0: continue
+        for j, missileJ in enumerate(missiles): # Считаем столкновения с каждым
+            if missileJ.energy == 0: continue
+            if missileI == missileJ:
                 continue
-            #Расчет расстояния между камнями
-            distance = hypot(missileI.x - missileJ.x, missileI.y - missileJ.y)
+
+            distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
             if distance < 2 * radiusMissile:
-                #Простейшая реакция на столкновение: обмен энергиями и углами
-                missileI.energy, missileJ.energy = missileJ.energy * coefLossCllisionEnergy, missileI.energy * coefLossCllisionEnergy
-                missileI.ange, missileJ.ange = missileJ.ange, missileI.ange
+                missileI.countCollision += 1
 
-                #Отталкивание для предотвращения залипания
-                overlay = (missileI.radius + missileJ.radius - distance) / 2
-                # energy = (overlay * lockFps / 2) ** 2 / 2
-                # if missileI.energy < energy: missileI.energy = energy
-                # if missileJ.energy < energy: missileJ.energy = energy
-                #
-                # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
+    # TODO collision missile
+    for i, missileI in enumerate(missiles): # Просчёт распределения сил
+        if missileI.energy == 0: continue
+        for j, missileJ in enumerate(missiles):
+            if missileJ.energy == 0: continue
+            if missileI == missileJ:
+                continue
+            distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
+            if distance < 2 * radiusMissile:
+                pass
+            pass
 
-                direction = atan2(missileI.y - missileJ.y, missileI.x - missileJ.x)
-                missileI.x += cos(direction) * overlay
-                missileI.y += sin(direction) * overlay
-                missileJ.x -= cos(direction) * overlay
-                missileJ.y -= sin(direction) * overlay
+    for missileI in missiles:
+        missileI.countCollision = 0
+pass
+
+# def calcMissileCollision():
+#     for i, missileI in enumerate(missiles):
+#         for j, missileJ in enumerate(missiles):
+#             if i >= j:  # Избегаем повторной проверки и самопересечения
+#                 continue
+#             if missileI.energy == 0 or missileJ.energy == 0: # Просчёт коллизии только если есть энергия
+#                 continue
+#
+#             # Расчет расстояния между камнями
+#             distance = hypot(missileI.x - missileJ.x, missileI.y - missileJ.y)
+#             if distance < 2 * radiusMissile:
+#                 # Простейшая реакция на столкновение: обмен энергиями и углами
+#                 missileI.energy, missileJ.energy = missileJ.energy * coefLossCllisionEnergy, missileI.energy * coefLossCllisionEnergy
+#                 missileI.rAnge, missileJ.rAnge = missileJ.rAnge, missileI.rAnge
+#
+#                 # Отталкивание для предотвращения залипания
+#                 overlay = (missileI.radius + missileJ.radius - distance) / 2
+#                 energy = (overlay ** 2) / 2
+#                 if missileI.energy < energy: missileI.energy = energy
+#                 if missileJ.energy < energy: missileJ.energy = energy
+#
+#                 # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
 
 def sceneDraw():
     screen.fill(RGB_WHITE)
 
-    pygame.draw.rect(screen, RGB_LIGHTGREY, (0, 0, screenWidth, menuHeight)) #rect menu
-    pygame.draw.rect(screen, RGB_DARKGREY, (0, menuHeight, screenWidth, widthWall)) #top wall
-    pygame.draw.rect(screen, RGB_DARKGREY, (0, screenHeight - widthWall, screenWidth, widthWall))  #bottom wall
+    pygame.draw.rect(screen, RGB_LIGHTGREY, (0, 0, screenWidth, menuHeight)) # rect menu
+    pygame.draw.rect(screen, RGB_DARKGREY, (0, menuHeight, screenWidth, widthWall)) #t op wall
+    pygame.draw.rect(screen, RGB_DARKGREY, (0, screenHeight - widthWall, screenWidth, widthWall))  # bottom wall
     pygame.draw.rect(screen, RGB_PED, (pointsStart, menuHeight + widthWall,
-                                        pointsWidth, screenHeight - menuHeight - 2 * widthWall)) #rect points
-    screen.blit(textPoint, (pointsStart + 25, menuHeight + widthWall + 80)) #"+1"
+                                        pointsWidth, screenHeight - menuHeight - 2 * widthWall)) # rect points
+    screen.blit(textPoint, (pointsStart + 25, menuHeight + widthWall + 80)) # "+1"
 
     missilesDraw()
     pass
@@ -165,8 +174,8 @@ def procEvents():
             running = False
 
 
-#run & launch
-#initialization
+# run & launch
+# initialization
 pygame.init()
 screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("Карамболь >\<")
@@ -176,44 +185,44 @@ font155 = pygame.font.Font("w3-ip.ttf", 155)
 
 textPoint = font155.render("+1", True, RGB_WHITE)
 
-#fps
+# fps
 clock = pygame.time.Clock()
 countFps = 0
 
-#circle
+# circle
 missiles = [
-Missile(screen, 1, 100, 200), Missile(screen, 2, 100, 400),
+Missile(screen, 1, 200, 200), Missile(screen, 2, 200, 400),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2),
 Missile(screen, 1), Missile(screen, 2)
 ]
-missiles[0].setEnergyAnge(12.5, -20)
-missiles[1].setEnergyAnge(15, 25)
-missiles[2].setEnergyAnge(20, 35)
-missiles[3].setEnergyAnge(20, -35)
-missiles[4].setEnergyAnge(25, 25)
+missiles[0].setEnergyRAnge(12.5, -0.5)
+missiles[1].setEnergyRAnge(15, 0.5)
+# missiles[2].setEnergyRAnge(20, 0.6)
+# missiles[3].setEnergyRAnge(20, -0.6)
+# missiles[4].setEnergyRAnge(25, 0.6)
+#
+# missiles[5].setEnergyRAnge(5, 3.14 / 2 - 0.0)
+# missiles[6].setEnergyRAnge(5, 3.14 / 2 - 0.1)
+# missiles[7].setEnergyRAnge(5, 3.14 / 2 - 0.2)
+# missiles[8].setEnergyRAnge(5, 3.14 / 2 - 0.3)
+# missiles[9].setEnergyRAnge(5, 3.14 / 2 - 0.4)
 
-missiles[5].setEnergyAnge(5, 90)
-missiles[6].setEnergyAnge(5, 80)
-missiles[7].setEnergyAnge(5, 70)
-missiles[8].setEnergyAnge(5, 60)
-missiles[9].setEnergyAnge(5, 50)
-
-#main cycle
+# main cycle
 running = True
 while running:
     procEvents()
 
-    #draw & calc
+    # draw & calc
     sceneDraw()
     missilesMove()
     calcWallCollision()
     calcMissileCollision()
     calcFps()
 
-    #update
+    # update
     pygame.display.flip()
-    clock.tick(lockFps)  #imput lag
+    clock.tick(lockFps)  # imput lag
 
 pygame.quit()
