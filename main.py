@@ -89,8 +89,12 @@ class Missile:
         missile.addRAnge, missile.addEnergy = sumVectors(missile.addRAnge, missile.addEnergy, zeroRAnge, energy)
 
         energy = fabs(sin(incidentRAnge) / self.countCollision) * coefLossCllisionEnergy
-        if incidentRAnge > pi: rotatRAnge = (zeroRAnge + pi / 2) % tau
-        else: rotatRAnge = (zeroRAnge - pi / 2) % tau
+        # TODO Странный if - работает не корректно
+        print(incidentRAnge)
+        if incidentRAnge > pi:
+            rotatRAnge = (zeroRAnge + pi / 2) % tau
+        else:
+            rotatRAnge = (zeroRAnge - pi / 2) % tau
         self.addRAnge, self.addEnergy = sumVectors(self.addRAnge, self.addEnergy, rotatRAnge, energy)
 pass
 
@@ -217,25 +221,25 @@ countFps = 0
 # circle
 missiles = [
 Missile(screen, 1, 200, 300), Missile(screen, 2, 500, 290),
-Missile(screen, 1), Missile(screen, 2),
-Missile(screen, 1), Missile(screen, 2),
-Missile(screen, 1), Missile(screen, 2),
-Missile(screen, 1), Missile(screen, 2)
+# Missile(screen, 1), Missile(screen, 2),
+# Missile(screen, 1), Missile(screen, 2),
+# Missile(screen, 1), Missile(screen, 2),
+# Missile(screen, 1), Missile(screen, 2)
 ]
 # missiles[0].setRAngeEnergy(-0.5, 13.5)
 # missiles[1].setRAngeEnergy(0.5, 14.5)
 
-missiles[0].setRAngeEnergy(0.2, 100) # TODO плохое отталкивание даже при большой инергии
+missiles[0].setRAngeEnergy(0, 100) # TODO плохое отталкивание даже при большой инергии
 
-missiles[2].setRAngeEnergy(0.6, 20)
-missiles[3].setRAngeEnergy(-0.6, 20)
-missiles[4].setRAngeEnergy(0.6, 25)
-
-missiles[5].setRAngeEnergy(3.14 / 2 - 0.0, 5)
-missiles[6].setRAngeEnergy(3.14 / 2 - 0.1, 5)
-missiles[7].setRAngeEnergy(3.14 / 2 - 0.2, 5)
-missiles[8].setRAngeEnergy(3.14 / 2 - 0.3, 5)
-missiles[9].setRAngeEnergy(3.14 / 2 - 0.4, 5)
+# missiles[2].setRAngeEnergy(0.6, 20)
+# missiles[3].setRAngeEnergy(-0.6, 20)
+# missiles[4].setRAngeEnergy(0.6, 25)
+#
+# missiles[5].setRAngeEnergy(3.14 / 2 - 0.0, 5)
+# missiles[6].setRAngeEnergy(3.14 / 2 - 0.1, 5)
+# missiles[7].setRAngeEnergy(3.14 / 2 - 0.2, 5)
+# missiles[8].setRAngeEnergy(3.14 / 2 - 0.3, 5)
+# missiles[9].setRAngeEnergy(3.14 / 2 - 0.4, 5)
 
 # main cycle
 running = True
