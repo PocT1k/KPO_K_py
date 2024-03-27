@@ -85,12 +85,12 @@ class Missile:
     def recalcEnergy(self, missile):
         zeroRAnge = self.rAnge + atan2(self.y - missile.y, missile.x - self.x) % tau
         incidentRAnge = (zeroRAnge - self.rAnge) % tau
-        energy = fabs(cos(incidentRAnge) / self.countCollision) * coefLossCllisionEnergy
+        energy = fabs(cos(incidentRAnge) / self.countCollision) * self.energy * coefLossCllisionEnergy
+
         missile.addRAnge, missile.addEnergy = sumVectors(missile.addRAnge, missile.addEnergy, zeroRAnge, energy)
 
-        energy = fabs(sin(incidentRAnge) / self.countCollision) * coefLossCllisionEnergy
+        energy = fabs(sin(incidentRAnge) / self.countCollision) * self.energy * coefLossCllisionEnergy
         # TODO Странный if - работает не корректно
-        print(incidentRAnge)
         if incidentRAnge > pi:
             rotatRAnge = (zeroRAnge + pi / 2) % tau
         else:
@@ -229,7 +229,7 @@ Missile(screen, 1, 200, 300), Missile(screen, 2, 500, 290),
 # missiles[0].setRAngeEnergy(-0.5, 13.5)
 # missiles[1].setRAngeEnergy(0.5, 14.5)
 
-missiles[0].setRAngeEnergy(0, 100) # TODO плохое отталкивание даже при большой инергии
+missiles[0].setRAngeEnergy(0.2, 100)
 
 # missiles[2].setRAngeEnergy(0.6, 20)
 # missiles[3].setRAngeEnergy(-0.6, 20)
