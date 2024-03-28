@@ -103,6 +103,7 @@ class Missile:
             case 1: newRAnge = (zeroRAnge - pi / 2) % tau
             case 2: newRAnge = (zeroRAnge + pi / 2) % tau
         self.addRAnge, self.addEnergy = sumVectors(self.addRAnge, self.addEnergy, newRAnge, energy)
+    pass
 pass
 
 def missilesMove():
@@ -175,7 +176,6 @@ def calcMissileCollision():
     #                 missileJ.energy = energy
     #             # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
     pass
-
 pass
 
 
@@ -238,9 +238,6 @@ def run():
     missiles.append(Missile(screen, 2))
     missiles.append(Missile(screen, 1))
     missiles.append(Missile(screen, 2))
-
-    # missiles[0].setRAngeEnergy(-0.5, 13.5)
-    # missiles[1].setRAngeEnergy(0.5, 14.5)
 
     missiles[0].setRAngeEnergy(pi, 30)
 
