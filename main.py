@@ -20,24 +20,35 @@ radiusMissile = 30
 widthWall = 50
 pointsStart = screenWidth - 300
 pointsWidth = 200
+spawnX = 200
+spawnY = (screenHeight - menuHeight) / 2 + menuHeight
 lockFps = 60
 coefLossCllisionEnergy = 0.97
 coefLossMoveEnergy = 0.03
 
+
+def addAnges(ang_1, ang_2):
+    return (ang_1 + ang_2) % tau
+
+def subAnges(ang_1, ang_2):
+    return (ang_1 - ang_2) % tau
 
 def sumVectors(ang_1, len_1, ang_2, len_2):
     x = len_1 * cos(ang_1) + len_2 * cos(ang_2)
     y = len_1 * sin(ang_1) + len_2 * sin(ang_2)
     return atan2(y, x) % tau, hypot(x, y)
 
-def addAnge(for_1, for_2):
-    return (for_1 + for_2) % tau
+def compAngles(ang_1, ang_2): # 1 - первый отложен от второго, 2 - второй отложен от первого
+    ang_1 = ang_1 % tau
+    ang_2 = ang_2 % tau
+    diffAnge = ang_1 - ang_2
 
-def subAnge(for_1, for_2):
-    return (for_1 - for_2) % tau
+    if diffAnge > 0: return 1
+    elif diffAnge < 0: return 2
+    else: return 0
 
 class Missile:
-    def __init__(self, screen, type = 0, x = radiusMissile + 10, y = (screenHeight - menuHeight) / 2 + menuHeight, radius = radiusMissile):
+    def __init__(self, screen, type = 0, x = spawnX, y = spawnY, radius = radiusMissile):
         self.screen = screen
         self.type = type
         self.x = x
@@ -62,16 +73,13 @@ class Missile:
     pass
 
     def setRAngeEnergy(self, rAnge = 0.0, energy = 0.0):
-        rAnge = rAnge % tau
-        self.rAnge = rAnge
+        self.rAnge = rAnge % tau
         self.energy = energy
 
     def move(self):
         if self.energy:
-            cs = cos(self.rAnge)
-            sn = sin(self.rAnge)
-            self.x += sqrt(2 * self.energy) * cs
-            self.y -= sqrt(2 * self.energy) * sn
+            self.x += sqrt(2 * self.energy) * cos(self.rAnge)
+            self.y -= sqrt(2 * self.energy) * sin(self.rAnge)
             self.energy -= coefLossMoveEnergy
             if self.energy <= 0:
                 self.energy = 0
@@ -83,19 +91,18 @@ class Missile:
         pygame.draw.circle(self.screen, RGB_DARKGREY, (self.x, self.y), self.insideR)
 
     def recalcEnergy(self, missile):
-        zeroRAnge = self.rAnge + atan2(self.y - missile.y, missile.x - self.x) % tau
-        incidentRAnge = (zeroRAnge - self.rAnge) % tau
-        energy = fabs(cos(incidentRAnge) / self.countCollision) * self.energy * coefLossCllisionEnergy
-
+        zeroRAnge = atan2(self.y - missile.y, missile.x - self.x) % tau
+        rAnge = fabs((zeroRAnge - self.rAnge)) % (pi / 2)
+        energy = cos(rAnge) / self.countCollision * self.energy * coefLossCllisionEnergy
         missile.addRAnge, missile.addEnergy = sumVectors(missile.addRAnge, missile.addEnergy, zeroRAnge, energy)
 
-        energy = fabs(sin(incidentRAnge) / self.countCollision) * self.energy * coefLossCllisionEnergy
-        # TODO Странный if - работает не корректно
-        if incidentRAnge > pi:
-            rotatRAnge = (zeroRAnge + pi / 2) % tau
-        else:
-            rotatRAnge = (zeroRAnge - pi / 2) % tau
-        self.addRAnge, self.addEnergy = sumVectors(self.addRAnge, self.addEnergy, rotatRAnge, energy)
+        energy = sin(rAnge) / self.countCollision * self.energy * coefLossCllisionEnergy
+
+        newRAnge = -zeroRAnge
+        match compAngles(zeroRAnge, self.rAnge):
+            case 1: newRAnge = (zeroRAnge - pi / 2) % tau
+            case 2: newRAnge = (zeroRAnge + pi / 2) % tau
+        self.addRAnge, self.addEnergy = sumVectors(self.addRAnge, self.addEnergy, newRAnge, energy)
 pass
 
 def missilesMove():
@@ -126,7 +133,8 @@ pass
 def calcMissileCollision():
     #matrCollis = [[0] * len(missiles) for _ in range(len(missiles))]
 
-    for i, missileI in enumerate(missiles): # Просчёт было ли столкновение для каждого шара
+    # Просчёт было ли столкновение для каждого шара
+    for i, missileI in enumerate(missiles):
         if missileI.energy == 0: continue
         for j, missileJ in enumerate(missiles): # Считаем столкновения с каждым
             if missileI == missileJ: continue
@@ -135,7 +143,8 @@ def calcMissileCollision():
             if distance < 2 * radiusMissile:
                 missileI.countCollision += 1
 
-    for i, missileI in enumerate(missiles): # Просчёт и распределения сил
+    # Просчёт и распределения сил
+    for i, missileI in enumerate(missiles):
         if missileI.energy == 0: continue
         for j, missileJ in enumerate(missiles):
             if missileI == missileJ: continue
@@ -143,40 +152,32 @@ def calcMissileCollision():
             distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
             if distance < 2 * radiusMissile:
                 missileI.recalcEnergy(missileJ)
+
         if missileI.countCollision:
             missileI.countCollision = 0
             missileI.energy = 0
 
+    # Обнуление сил после просчёта
     for missile in missiles:
         missile.rAnge, missile.energy = sumVectors(missile.rAnge, missile.energy, missile.addRAnge, missile.addEnergy)
         missile.addRAnge, missile.addEnergy = 0, 0
 
+    # # TODO Отталкивание для предотвращения залипания
+    # for i, missileI in enumerate(missiles):
+    #     for j, missileJ in enumerate(missiles):
+    #
+    #         distance = hypot((missileI.x - missileJ.x), (missileI.y - missileJ.y))
+    #         if distance < 2 * radiusMissile:
+    #             overlay = (missileI.radius + missileJ.radius - distance) / 2
+    #             energy = (overlay ** 2) / 2
+    #             if missileI.energy + missileJ.energy < 2 * energy:
+    #                 missileI.energy = energy
+    #                 missileJ.energy = energy
+    #             # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
     pass
 
 pass
 
-# def calcMissileCollision():
-#     for i, missileI in enumerate(missiles):
-#         for j, missileJ in enumerate(missiles):
-#             if i >= j:  # Избегаем повторной проверки и самопересечения
-#                 continue
-#             if missileI.energy == 0 or missileJ.energy == 0: # Просчёт коллизии только если есть энергия
-#                 continue
-#
-#             # Расчет расстояния между камнями
-#             distance = hypot(missileI.x - missileJ.x, missileI.y - missileJ.y)
-#             if distance < 2 * radiusMissile:
-#                 # Простейшая реакция на столкновение: обмен энергиями и углами
-#                 missileI.energy, missileJ.energy = missileJ.energy * coefLossCllisionEnergy, missileI.energy * coefLossCllisionEnergy
-#                 missileI.rAnge, missileJ.rAnge = missileJ.rAnge, missileI.rAnge
-#
-#                 # Отталкивание для предотвращения залипания
-#                 overlay = (missileI.radius + missileJ.radius - distance) / 2
-#                 energy = (overlay ** 2) / 2
-#                 if missileI.energy < energy: missileI.energy = energy
-#                 if missileJ.energy < energy: missileJ.energy = energy
-#
-#                 # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
 
 def sceneDraw():
     screen.fill(RGB_WHITE)
@@ -203,8 +204,7 @@ def procEvents():
             running = False
 
 
-# run & launch
-# initialization
+# global initialization
 pygame.init()
 screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("Карамболь >\<")
@@ -219,42 +219,57 @@ clock = pygame.time.Clock()
 countFps = 0
 
 # circle
-missiles = [
-Missile(screen, 1, 200, 300), Missile(screen, 2, 500, 290),
-# Missile(screen, 1), Missile(screen, 2),
-# Missile(screen, 1), Missile(screen, 2),
-# Missile(screen, 1), Missile(screen, 2),
-# Missile(screen, 1), Missile(screen, 2)
-]
-# missiles[0].setRAngeEnergy(-0.5, 13.5)
-# missiles[1].setRAngeEnergy(0.5, 14.5)
+missiles = []
 
-missiles[0].setRAngeEnergy(0.2, 100)
 
-# missiles[2].setRAngeEnergy(0.6, 20)
-# missiles[3].setRAngeEnergy(-0.6, 20)
-# missiles[4].setRAngeEnergy(0.6, 25)
-#
-# missiles[5].setRAngeEnergy(3.14 / 2 - 0.0, 5)
-# missiles[6].setRAngeEnergy(3.14 / 2 - 0.1, 5)
-# missiles[7].setRAngeEnergy(3.14 / 2 - 0.2, 5)
-# missiles[8].setRAngeEnergy(3.14 / 2 - 0.3, 5)
-# missiles[9].setRAngeEnergy(3.14 / 2 - 0.4, 5)
-
-# main cycle
+# run
+motion = 0
 running = True
-while running:
-    procEvents()
 
-    # draw & calc
-    sceneDraw()
-    missilesMove()
-    calcWallCollision()
-    calcMissileCollision()
-    calcFps()
+def run():
+    # main cycle
+    missiles.append(Missile(screen, 1, 800, 300))
+    missiles.append(Missile(screen, 2, 500, 300))
+    missiles.append(Missile(screen, 1))
+    missiles.append(Missile(screen, 2))
+    missiles.append(Missile(screen, 1))
+    missiles.append(Missile(screen, 2))
+    missiles.append(Missile(screen, 1))
+    missiles.append(Missile(screen, 2))
+    missiles.append(Missile(screen, 1))
+    missiles.append(Missile(screen, 2))
 
-    # update
-    pygame.display.flip()
-    clock.tick(lockFps)  # imput lag
+    # missiles[0].setRAngeEnergy(-0.5, 13.5)
+    # missiles[1].setRAngeEnergy(0.5, 14.5)
 
-pygame.quit()
+    missiles[0].setRAngeEnergy(pi, 30)
+
+    # missiles[2].setRAngeEnergy(0.6, 20)
+    # missiles[3].setRAngeEnergy(-0.6, 20)
+    # missiles[4].setRAngeEnergy(0.6, 25)
+    #
+    # missiles[5].setRAngeEnergy(3.14 / 2 - 0.0, 5)
+    # missiles[6].setRAngeEnergy(3.14 / 2 - 0.1, 5)
+    # missiles[7].setRAngeEnergy(3.14 / 2 - 0.2, 5)
+    # missiles[8].setRAngeEnergy(3.14 / 2 - 0.3, 5)
+    # missiles[9].setRAngeEnergy(3.14 / 2 - 0.4, 5)
+
+    while running:
+        procEvents()
+
+        # draw & calc
+        sceneDraw()
+        missilesMove()
+        calcWallCollision()
+        calcMissileCollision()
+        calcFps()
+
+        # update
+        pygame.display.flip()
+        clock.tick(lockFps)  # imput lag
+
+    pygame.quit()
+pass
+
+if __name__ == '__main__':
+    run()
