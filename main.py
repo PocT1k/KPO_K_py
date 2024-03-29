@@ -387,3 +387,5 @@ pass
 
 if __name__ == '__main__':
     run()
+
+# pyinstaller --onefile --add-data "C:\\Users\\novik\\PycharmProjects\\KPO_K_py\\w3-ip.ttf;." main.py -w
