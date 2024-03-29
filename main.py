@@ -23,6 +23,7 @@ pointsWidth = 200
 spawnX = 200
 spawnY = (screenHeight - menuHeight) / 2 + menuHeight
 lockFps = 60
+countMoves = 8
 coefLossCllisionEnergy = 0.97
 coefLossMoveEnergy = 0.03
 
@@ -104,7 +105,7 @@ class Missile:
             case 2: newRAnge = (zeroRAnge + pi / 2) % tau
         self.addRAnge, self.addEnergy = sumVectors(self.addRAnge, self.addEnergy, newRAnge, energy)
     pass
-pass
+pass # Missile
 
 def missilesMove():
     for missile in missiles:
@@ -163,7 +164,7 @@ def calcMissileCollision():
         missile.rAnge, missile.energy = sumVectors(missile.rAnge, missile.energy, missile.addRAnge, missile.addEnergy)
         missile.addRAnge, missile.addEnergy = 0, 0
 
-    # # TODO Отталкивание для предотвращения залипания
+    # # Отталкивание для предотвращения залипания
     # for i, missileI in enumerate(missiles):
     #     for j, missileJ in enumerate(missiles):
     #
@@ -176,8 +177,20 @@ def calcMissileCollision():
     #                 missileJ.energy = energy
     #             # if missileI.ange == missileJ.ange: missileJ.ange = -missileI.ange
     pass
-pass
+pass # calcMissileCollision
 
+def pointsDraw():
+    screen.blit(textPlayer1, (10, 5))  # Игрок 1
+    screen.blit(textPlayer2, (10, 55))  # Игрок 2
+
+    len1 = (countMoves + 1) // 2
+    for i in range(len1):
+        pygame.draw.rect(screen, RGB_WHITE, (160 + 100 * i, 5, 80, 30))
+
+    len2 = countMoves // 2
+    for i in range(len2):
+        pygame.draw.rect(screen, RGB_WHITE, (160 + 100 * i, 55, 80, 30))
+pass
 
 def sceneDraw():
     screen.fill(RGB_WHITE)
@@ -189,19 +202,51 @@ def sceneDraw():
                                         pointsWidth, screenHeight - menuHeight - 2 * widthWall)) # rect points
     screen.blit(textPoint, (pointsStart + 25, menuHeight + widthWall + 80)) # "+1"
 
-    missilesDraw()
-    pass
+    pointsDraw() # Очки
+pass
 
 def calcFps():
     countFps = clock.get_fps()
     textFps = font20.render(f"FPS: {int(countFps)}", True, RGB_LIGHTGREEN)
     screen.blit(textFps, (screenWidth - 120, 0))
 
-def procEvents():
+def procBasicEvents():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             global running
             running = False
+
+
+def runMotions():
+    missiles.clear()
+    countMissiles = -1
+    points1 = [None] * ((countMoves + 1) // 2)
+    points2 = [None] * (countMoves // 2)
+
+    for motion in range(countMoves):
+        if running == False: continue
+        missiles.append(Missile(screen, motion % 2 + 1))
+        countMissiles += 1
+        missiles[countMissiles].setRAngeEnergy(0, 4) # TODO Начальные условия
+
+        while(isMovement() and running):
+            # events
+            procBasicEvents()
+            # draw
+            sceneDraw()
+            missilesDraw()
+            # physics
+            missilesMove()
+            calcWallCollision()
+            calcMissileCollision()
+            # update & fps
+            calcFps()
+            pygame.display.flip()
+            clock.tick(lockFps)
+        pass # while
+        if running == False: continue
+    pass # for
+pass
 
 
 # global initialization
@@ -210,9 +255,12 @@ screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("Карамболь >\<")
 
 font20 = pygame.font.Font("w3-ip.ttf", 20)
+font30 = pygame.font.Font("w3-ip.ttf", 30)
 font155 = pygame.font.Font("w3-ip.ttf", 155)
 
 textPoint = font155.render("+1", True, RGB_WHITE)
+textPlayer1 = font30.render("Игрок 1", True, RGB_BLACK)
+textPlayer2 = font30.render("Игрок 2", True, RGB_BLACK)
 
 # fps
 clock = pygame.time.Clock()
@@ -220,50 +268,24 @@ countFps = 0
 
 # circle
 missiles = []
+# points
+points1 = []
+points2 = []
 
 
 # run
-motion = 0
 running = True
 
 def run():
     # main cycle
-    missiles.append(Missile(screen, 1, 800, 300))
-    missiles.append(Missile(screen, 2, 500, 300))
-    missiles.append(Missile(screen, 1))
-    missiles.append(Missile(screen, 2))
-    missiles.append(Missile(screen, 1))
-    missiles.append(Missile(screen, 2))
-    missiles.append(Missile(screen, 1))
-    missiles.append(Missile(screen, 2))
-    missiles.append(Missile(screen, 1))
-    missiles.append(Missile(screen, 2))
-
-    missiles[0].setRAngeEnergy(pi, 30)
-
-    # missiles[2].setRAngeEnergy(0.6, 20)
-    # missiles[3].setRAngeEnergy(-0.6, 20)
-    # missiles[4].setRAngeEnergy(0.6, 25)
-    #
-    # missiles[5].setRAngeEnergy(3.14 / 2 - 0.0, 5)
-    # missiles[6].setRAngeEnergy(3.14 / 2 - 0.1, 5)
-    # missiles[7].setRAngeEnergy(3.14 / 2 - 0.2, 5)
-    # missiles[8].setRAngeEnergy(3.14 / 2 - 0.3, 5)
-    # missiles[9].setRAngeEnergy(3.14 / 2 - 0.4, 5)
+    # missiles.append(Missile(screen, 0 % 2 + 1))
+    # missiles[0].setRAngeEnergy(0, 30)
+    # missiles.append(Missile(screen, 1 % 2 + 1, 500, 300))
+    # missiles[1].setRAngeEnergy(0, 0)
 
     while running:
-        procEvents()
-
         # draw & calc
-        sceneDraw()
-        missilesMove()
-        calcWallCollision()
-        calcMissileCollision()
-        calcFps()
-
-        # update
-        pygame.display.flip()
-        clock.tick(lockFps)  # imput lag
+        runMotions()
 
     pygame.quit()
 pass
