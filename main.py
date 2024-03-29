@@ -258,7 +258,6 @@ def calcFps():
     screen.blit(textE, (screenWidth - 140, 83))
 
     # step
-    if step < 0: return
     textStep = font70.render(str(step + 1), True, RGB_BLACK)
     screen.blit(textStep, (screenWidth - 200, 7))
 
