@@ -20,12 +20,12 @@ radiusMissile = 30
 widthWall = 50
 pointsStart = screenWidth - 300
 pointsWidth = 200
-spawnX = 200
-spawnY = (screenHeight - menuHeight) / 2 + menuHeight
+start = [200, (screenHeight - menuHeight) / 2 + menuHeight]
 lockFps = 60
-countMoves = 8
+countMoves = 2
 coefLossCllisionEnergy = 0.97
 coefLossMoveEnergy = 0.03
+bottomRestart = pygame.Rect(screenWidth - 110, 30, 70, 50)
 
 
 def addAnges(ang_1, ang_2):
@@ -49,7 +49,7 @@ def compAngles(ang_1, ang_2): # 1 - первый отложен от второ�
     else: return 0
 
 class Missile:
-    def __init__(self, screen, type = 0, x = spawnX, y = spawnY, radius = radiusMissile):
+    def __init__(self, screen, type = 0, x = start[0], y = start[1], radius = radiusMissile):
         self.screen = screen
         self.type = type
         self.x = x
@@ -116,10 +116,47 @@ def missilesDraw():
         missile.draw()
 
 def isMovement(): # T - move, F - calm
+    max = 0.0
     for missile in missiles:
-        if missile.energy:
-            return True
-    return False
+        if missile.energy > max:
+            max =  missile.energy
+    print(max)
+    return max
+
+def getParameters():
+    global running
+    idDefine = True
+    end = (start[0] - 100, start[1])
+    while (idDefine and running):
+        # events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                return
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    return
+            elif event.type == pygame.MOUSEMOTION:  # Движение мышкой
+                end = event.pos
+            elif event.type == pygame.MOUSEBUTTONDOWN:  # Нажатие ЛКМ
+                idDefine = False
+        if running == False: break
+
+        # draw
+        sceneDraw()
+        missilesDraw()
+        pygame.draw.line(screen, RGB_BLACK, start, end, 5)
+
+        # update & fps
+        calcFps()
+        pygame.display.flip()
+        clock.tick(lockFps)
+    ange = atan2(end[1] - start[1], start[0] - end[0]) % tau
+    energy = hypot(start[0] - end[0], start[1] - end[1]) / 10
+    if energy > 20: energy = 20
+    return ange, energy
+
 
 def calcWallCollision():
     for missile in missiles:
@@ -179,17 +216,21 @@ def calcMissileCollision():
     pass
 pass # calcMissileCollision
 
+
 def pointsDraw():
+    global points1, points2, font30
+
+    # Прямоугльники
     screen.blit(textPlayer1, (10, 5))  # Игрок 1
     screen.blit(textPlayer2, (10, 55))  # Игрок 2
+    pygame.draw.rect(screen, RGB_WHITE, (160 + 100, 5, 80, 30))
+    pygame.draw.rect(screen, RGB_WHITE, (160 + 100, 55, 80, 30))
 
-    len1 = (countMoves + 1) // 2
-    for i in range(len1):
-        pygame.draw.rect(screen, RGB_WHITE, (160 + 100 * i, 5, 80, 30))
-
-    len2 = countMoves // 2
-    for i in range(len2):
-        pygame.draw.rect(screen, RGB_WHITE, (160 + 100 * i, 55, 80, 30))
+    # Очки
+    textPoints1 = font30.render(str(points1), True, RGB_BLACK)
+    textPoints2 = font30.render(str(points2), True, RGB_BLACK)
+    screen.blit(textPoints1, (160 + 110, 2))  # очки 1
+    screen.blit(textPoints2, (160 + 110, 52))  # очки 2
 pass
 
 def sceneDraw():
@@ -201,6 +242,8 @@ def sceneDraw():
     pygame.draw.rect(screen, RGB_PED, (pointsStart, menuHeight + widthWall,
                                         pointsWidth, screenHeight - menuHeight - 2 * widthWall)) # rect points
     screen.blit(textPoint, (pointsStart + 25, menuHeight + widthWall + 80)) # "+1"
+    pygame.draw.rect(screen, RGB_WHITE, (bottomRestart[0], bottomRestart[1], bottomRestart[2], bottomRestart[3])) # bottom restart
+    screen.blit(textRestart, (bottomRestart[0] + 6, bottomRestart[1] + 2))  # "r"
 
     pointsDraw() # Очки
 pass
@@ -211,40 +254,69 @@ def calcFps():
     screen.blit(textFps, (screenWidth - 120, 0))
 
 def procBasicEvents():
+    global running
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            global running
             running = False
+            return
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+                return
 
 
 def runMotions():
+    global running, points1, points2
+    points1, points2 = 0, 0
     missiles.clear()
     countMissiles = -1
-    points1 = [None] * ((countMoves + 1) // 2)
-    points2 = [None] * (countMoves // 2)
+    pygame.display.flip()
 
     for motion in range(countMoves):
         if running == False: continue
         missiles.append(Missile(screen, motion % 2 + 1))
         countMissiles += 1
-        missiles[countMissiles].setRAngeEnergy(0, 4) # TODO Начальные условия
+        rAnge, energy = getParameters()
+        if running == False: continue
+        missiles[countMissiles].setRAngeEnergy(rAnge, energy)
 
         while(isMovement() and running):
             # events
             procBasicEvents()
+            if running == False: break
+
             # draw
             sceneDraw()
             missilesDraw()
+
             # physics
             missilesMove()
             calcWallCollision()
             calcMissileCollision()
+
             # update & fps
             calcFps()
             pygame.display.flip()
             clock.tick(lockFps)
         pass # while
-        if running == False: continue
+
+        # Подсчёт очков
+        cont1 = 0
+        cont2 = 0
+        for missile in missiles:
+            if missile.type == 1:
+                cont1 += 1
+            if missile.type == 2:
+                cont2 += 1
+        if motion % 2 == 0:
+            points1 = cont1
+        if motion % 2 == 1:
+            points2 = cont2
+
+        sceneDraw()
+        missilesDraw()
+        pygame.display.flip()
     pass # for
 pass
 
@@ -259,6 +331,7 @@ font30 = pygame.font.Font("w3-ip.ttf", 30)
 font155 = pygame.font.Font("w3-ip.ttf", 155)
 
 textPoint = font155.render("+1", True, RGB_WHITE)
+textRestart = font30.render("res", True, RGB_BLACK)
 textPlayer1 = font30.render("Игрок 1", True, RGB_BLACK)
 textPlayer2 = font30.render("Игрок 2", True, RGB_BLACK)
 
@@ -269,24 +342,37 @@ countFps = 0
 # circle
 missiles = []
 # points
-points1 = []
-points2 = []
+points1, points2 = 0, 0
 
 
 # run
 running = True
 
 def run():
-    # main cycle
-    # missiles.append(Missile(screen, 0 % 2 + 1))
-    # missiles[0].setRAngeEnergy(0, 30)
-    # missiles.append(Missile(screen, 1 % 2 + 1, 500, 300))
-    # missiles[1].setRAngeEnergy(0, 0)
-
+    global running
     while running:
         # draw & calc
         runMotions()
 
+        isWait = True
+        while (isWait):
+            if running == False: break
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    return
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                        return
+                    if event.key == pygame.K_r:
+                        isWait = False
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if bottomRestart.collidepoint(event.pos):
+                        isWait = False
+            pass # for
+        pass # while stop
+    pass  # while main
     pygame.quit()
 pass
 
