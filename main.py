@@ -24,7 +24,7 @@ start = [200, (screenHeight - menuHeight) / 2 + menuHeight]
 lockFps = 60
 countMoves = 8
 coefLossCllisionEnergy = 0.97
-coefLossMoveEnergy = 0.03
+coefLossMoveEnergy = 0.07
 restartRect = pygame.Rect(screenWidth - 110, 30, 70, 50)
 
 
@@ -98,7 +98,6 @@ class Missile:
         missile.addRAnge, missile.addEnergy = sumVectors(missile.addRAnge, missile.addEnergy, zeroRAnge, energy)
 
         energy = sin(rAnge) / self.countCollision * self.energy * coefLossCllisionEnergy
-
         newRAnge = -zeroRAnge
         match compAngles(zeroRAnge, self.rAnge):
             case 1: newRAnge = (zeroRAnge - pi / 2) % tau
@@ -316,10 +315,8 @@ def runMotions():
                 if pointsRect.collidepoint(missile.x, missile.y):
                     cont2 += 1
         # Новые значения
-        if motion % 2 == 0:
-            points1 = cont1
-        if motion % 2 == 1:
-            points2 = cont2
+        points1 = cont1
+        points2 = cont2
 
         sceneDraw()
         missilesDraw()
