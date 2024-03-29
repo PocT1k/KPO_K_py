@@ -217,7 +217,7 @@ pass # calcMissileCollision
 
 
 def pointsDraw():
-    global points1, points2, font30
+    global points1, points2
 
     # Прямоугльники
     screen.blit(textPlayer1, (10, 5))  # Игрок 1
@@ -247,6 +247,7 @@ def sceneDraw():
 pass
 
 def calcFps():
+    global step
     # fps
     countFps = clock.get_fps()
     textFps = font20.render(f"FPS: {int(countFps)}", True, RGB_LIGHTGREEN)
@@ -255,6 +256,11 @@ def calcFps():
     # energy
     textE = font12.render(str(isMovement()), True, RGB_LIGHTGREEN)
     screen.blit(textE, (screenWidth - 140, 83))
+
+    # step
+    if step < 0: return
+    textStep = font70.render(str(step + 1), True, RGB_BLACK)
+    screen.blit(textStep, (screenWidth - 200, 7))
 
 def procBasicEvents():
     global running
@@ -270,13 +276,14 @@ def procBasicEvents():
 
 
 def runMotions():
-    global running, points1, points2
+    global running, points1, points2, step
     points1, points2 = 0, 0
     missiles.clear()
     countMissiles = -1
     pygame.display.flip()
 
     for motion in range(countMoves):
+        step = motion
         if running == False: continue
         missiles.append(Missile(screen, motion % 2 + 1))
         countMissiles += 1
@@ -333,6 +340,7 @@ pygame.display.set_caption("Карамболь >\<")
 font12 = pygame.font.Font("w3-ip.ttf", 12)
 font20 = pygame.font.Font("w3-ip.ttf", 20)
 font30 = pygame.font.Font("w3-ip.ttf", 30)
+font70 = pygame.font.Font("w3-ip.ttf", 70)
 font155 = pygame.font.Font("w3-ip.ttf", 155)
 
 textPoint = font155.render("+1", True, RGB_WHITE)
@@ -346,11 +354,8 @@ countFps = 0
 
 # circle
 missiles = []
-# points
 points1, points2 = 0, 0
-
-
-# run
+step = -1
 running = True
 
 def run():
